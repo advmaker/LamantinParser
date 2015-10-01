@@ -4,95 +4,23 @@ use Symfony\Component\DomCrawler\Crawler;
 
 class Parser
 {
-    const BASE_URL = 'http://lamantin-kafe.ru';
-
     /**
      * @var Crawler
      */
     private $crawler;
 
     /**
-     * @var array
+     * @var Normalizer
      */
-    private $data;
+    private $normalizer;
 
     /**
-     * @param $crawler
+     * @param Crawler $crawler
      */
-    public function __construct(Crawler $crawler)
+    public function __construct(Crawler $crawler, Normalizer $normalizer)
     {
         $this->crawler = $crawler;
-    }
-
-    public function parse()
-    {
-        $cafe_map = $this->parseCafeList(file_get_contents(self::BASE_URL));
-        $menu_map = $this->parseAllCafeMenu($cafe_map);
-
-        $this->data = $menu_map;
-
-        return $this;
-    }
-
-    public function flatten()
-    {
-        $result = [];
-        $date = new \DateTime('today');
-
-        if (count($this->data) === 0) {
-            return $result;
-        }
-
-        foreach ($this->data as $cafe => $menu) {
-            foreach ((array) $menu as $category => $meal_list) {
-                foreach ((array) $meal_list as $meal) {
-                    $result[] = array_merge($meal, compact('cafe', 'category', 'date'));
-                }
-            }
-        }
-
-        $this->data = $result;
-
-        return $this;
-    }
-
-    public function get()
-    {
-        return $this->data;
-    }
-
-    /**
-     * @param string $html
-     */
-    private function setHtml($html)
-    {
-        $this->crawler->clear();
-        $this->crawler->addHtmlContent($html);
-    }
-
-    /**
-     * Парсит меню для всех кафе в массиве
-     *
-     * @param array $cafeList
-     *
-     * @return array
-     */
-    private function parseAllCafeMenu(array $cafeList)
-    {
-        $cafes_menu = [];
-
-        foreach ($cafeList as $title => $info_url) {
-            try {
-                $menu_url = $this->parseLinkToMenu(file_get_contents($info_url));
-                $menu = $this->parseCafeMenu(file_get_contents($menu_url));
-
-                $cafes_menu[$title] = $menu;
-            } catch (\InvalidArgumentException $e) {
-                continue;
-            }
-        }
-
-        return $cafes_menu;
+        $this->normalizer = $normalizer;
     }
 
     /**
@@ -102,7 +30,7 @@ class Parser
      *
      * @return array
      */
-    private function parseCafeMenu($html)
+    public function parseCafeMenu($html)
     {
         $this->setHtml($html);
 
@@ -117,12 +45,12 @@ class Parser
             ->slice(1)
             ->each(function (Crawler $node) use (&$menu, &$category) {
                 $td_nodes = $node->filter('td');
-                $title = $this->normaliseTitle($td_nodes->eq(0));
-                $weight = $this->normaliseWeight($td_nodes->eq(1));
-                $price = $this->normalisePrice($td_nodes->eq(2));
+                $title = $this->normalizer->normaliseTitle($td_nodes->eq(0));
+                $weight = $this->normalizer->normaliseWeight($td_nodes->eq(1));
+                $price = $this->normalizer->normalisePrice($td_nodes->eq(2));
 
                 if ($price === 0.0 && count($weight) === 0) {
-                    $category = $this->normaliseCategory($title);
+                    $category = $this->normalizer->normaliseCategory($title);
                     return;
                 }
 
@@ -139,7 +67,7 @@ class Parser
      * @param string $html
      * @return null|string
      */
-    private function parseLinkToMenu($html)
+    public function parseLinkToMenu($html)
     {
         $this->setHtml($html);
 
@@ -160,7 +88,7 @@ class Parser
      *
      * @return array
      */
-    private function parseCafeList($html)
+    public function parseCafeList($html)
     {
         $this->setHtml($html);
 
@@ -177,65 +105,11 @@ class Parser
     }
 
     /**
-     * Нормализует текст категории
-     *
-     * @param string $category
-     *
-     * @return string
+     * @param string $html
      */
-    private function normaliseCategory($category)
+    private function setHtml($html)
     {
-        return trim(explode(',', $category)[0]);
-    }
-
-    /**
-     * Нормализует название блюда
-     *
-     * @param Crawler|null $element
-     * @return string
-     */
-    private function normaliseTitle(Crawler $element = null)
-    {
-        if ($element === null) {
-            return '';
-        }
-
-        $title = (string) $element->text();
-
-        return up_first(mb_strtolower($title));
-    }
-
-    /**
-     * Нормализует значение веса блюда
-     *
-     * @param Crawler|null $element
-     * @return string
-     */
-    private function normaliseWeight(Crawler $element = null)
-    {
-        if ($element === null) {
-            return [];
-        }
-
-        $weight = (string) $element->text();
-
-        return array_filter(array_map('trim', explode('/', $weight)));
-    }
-
-    /**
-     * Нормализует значение цены на блюдо
-     *
-     * @param Crawler|null $element
-     * @return float
-     */
-    private function normalisePrice(Crawler $element = null)
-    {
-        if ($element === null) {
-            return 0.0;
-        }
-
-        $price = (string) $element->text();
-
-        return (float) str_replace(',', '.', $price);
+        $this->crawler->clear();
+        $this->crawler->addHtmlContent($html);
     }
 }
