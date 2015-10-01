@@ -110,7 +110,7 @@ class Parser
         $category = null;
 
         $this->crawler
-            ->filter('body #content .entry-content table tbody tr')
+            ->filterXPath('//body//div[@id="content"]//div[@class="entry-content"]//table/tbody/tr')
             ->reduce(function (Crawler $node) {
                 return $node->filter('td')->count() === 3;
             })
@@ -143,7 +143,7 @@ class Parser
     {
         $this->setHtml($html);
 
-        $crawler = $this->crawler->filter('body #content .entry-content');
+        $crawler = $this->crawler->filterXPath('//body//div[@id="content"]//div[@class="entry-content"]');
         try {
             $menu_url = $crawler->selectLink('Меню')->attr('href');
         } catch (\InvalidArgumentException $e) {
@@ -167,7 +167,7 @@ class Parser
         $cafe_map = [];
 
         $this->crawler
-            ->filter('body .xoxo .menu-item > a')
+            ->filterXPath('//body//ul[@class="xoxo"]//li/a')
             ->each(function (Crawler $node) use (&$cafe_map) {
                 $cafe_map[$node->attr('title')] = $node->attr('href');
             })
