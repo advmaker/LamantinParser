@@ -40,11 +40,11 @@ class Parser
         $this->crawler
             ->filterXPath('//body//div[@id="content"]//div[@class="entry-content"]//table/tbody/tr')
             ->reduce(function (Crawler $node) {
-                return $node->filter('td')->count() === 3;
+                return $node->filterXPath('//td')->count() === 3;
             })
             ->slice(1)
             ->each(function (Crawler $node) use (&$menu, &$category) {
-                $td_nodes = $node->filter('td');
+                $td_nodes = $node->filterXPath('//td');
                 $title = $this->normalizer->normaliseTitle($td_nodes->eq(0));
                 $weight = $this->normalizer->normaliseWeight($td_nodes->eq(1));
                 $price = $this->normalizer->normalisePrice($td_nodes->eq(2));
