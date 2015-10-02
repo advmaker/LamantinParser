@@ -1,12 +1,15 @@
 <?php namespace Lamantin\Console;
 
 use Lamantin\Client;
+use Lamantin\Filter;
+use Lamantin\Collection;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Lamantin\Collections\Collection;
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 class LamantinCommand extends Command
 {
@@ -14,6 +17,11 @@ class LamantinCommand extends Command
      * @var Client
      */
     private $client;
+
+    /**
+     * @var Filter
+     */
+    private $filter;
 
     /**
      * Initial setup
@@ -24,9 +32,40 @@ class LamantinCommand extends Command
             ->setName('lamantin:start')
             ->setDescription('Запустить Lamantin')
             ->setHelp('Im help, im helping')
+            ->addOption(
+                'title',
+                't',
+                InputOption::VALUE_REQUIRED,
+                'Название блюда'
+            )
+            ->addOption(
+                'weight',
+                'w',
+                InputOption::VALUE_REQUIRED,
+                'Вес блюда'
+            )
+            ->addOption(
+                'price',
+                'p',
+                InputOption::VALUE_REQUIRED,
+                'Цена блюда'
+            )
+            ->addOption(
+                'category',
+                'cat',
+                InputOption::VALUE_REQUIRED,
+                'Категория блюда'
+            )
+            ->addOption(
+                'cafe',
+                'c',
+                InputOption::VALUE_REQUIRED,
+                'Название кафе'
+            )
         ;
 
         $this->client = new Client();
+        $this->filter = new Filter(new ExpressionLanguage());
     }
 
     /**
@@ -40,12 +79,50 @@ class LamantinCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         /** @var Collection $menu */
-        $menu = unserialize(file_get_contents(BASE_DIR . '/menu.file'));
+        $menu = Collection::make(unserialize(file_get_contents(BASE_DIR . '/menu.file')));
 
-        $filter = $menu->filter(function ($entry) {
-            return $entry['price'] <= 50;
-        });
+        $menu = $this->filterMenu($menu)
+            ->transform(function (array $entry) {
+                $entry['weight'] = implode('/', $entry['weight']);
+                unset($entry['cafe']);
 
-        dump($filter);
+                return $entry;
+            })
+            ->toArray()
+        ;
+
+        $this->displayTable($menu, $output);
+    }
+
+    private function filterMenu(Collection $menu)
+    {
+        $this->filter->setCollection($menu);
+
+        foreach ($input->getOptions() as $option => $value) {
+            $method = 'filter' . ucfirst($option);
+            if (method_exists($this->filter, $method)) {
+                $this->filter->{$method}($value);
+            }
+        }
+
+        return $this->filter->getCollection();
+    }
+
+    /**
+     * Result info
+     * @param array $menu
+     * @param OutputInterface $output
+     */
+    public function displayTable(array $menu, $output)
+    {
+        if (count($menu) !== 0) {
+            $output->writeln('<info></info>');
+
+            $table = $this->getHelper('table');
+            $table->setHeaders(['Название блюда', 'Вес', 'Цена', 'Категория'])->setRows($menu);
+            $table->render($output);
+        } else {
+            $output->writeln('<info></info>');
+        }
     }
 }
