@@ -59,43 +59,47 @@ class Filter
     }
 
     /**
-     * @param string $input
+     * @param array $input
      */
-    public function filterWeight($input)
+    public function filterWeight(array $input = [])
     {
         if (empty($input) || $this->collection->isEmpty()) {
             return null;
         }
 
-        list($operand, $value) = array_values($this->getOperandAndValue($input));
+        foreach ($input as $nested) {
+            list($operand, $value) = array_values($this->getOperandAndValue($nested));
 
-        $this->collection = $this->collection->filter(function (array $entry) use ($operand, $value) {
-            $weight = array_sum($entry['weight']);
+            $this->collection = $this->collection->filter(function (array $entry) use ($operand, $value) {
+                $weight = array_sum($entry['weight']);
 
-            return $this->expression->evaluate(
-                "weight {$operand} value",
-                compact('weight', 'value')
-            );
-        });
+                return $this->expression->evaluate(
+                    "weight {$operand} value",
+                    compact('weight', 'value')
+                );
+            });
+        }
     }
 
     /**
-     * @param string $input
+     * @param array $input
      */
-    public function filterPrice($input)
+    public function filterPrice(array $input = [])
     {
         if (empty($input) || $this->collection->isEmpty()) {
             return null;
         }
 
-        list($operand, $value) = array_values($this->getOperandAndValue($input));
+        foreach ($input as $nested) {
+            list($operand, $value) = array_values($this->getOperandAndValue($nested));
 
-        $this->collection = $this->collection->filter(function (array $entry) use ($operand, $value) {
-            return $this->expression->evaluate(
-                "entry['price'] {$operand} value",
-                compact('entry', 'value')
-            );
-        });
+            $this->collection = $this->collection->filter(function (array $entry) use ($operand, $value) {
+                return $this->expression->evaluate(
+                    "entry['price'] {$operand} value",
+                    compact('entry', 'value')
+                );
+            });
+        }
     }
 
     /**
