@@ -22,11 +22,19 @@ class Filter
         $this->expression = $expression;
     }
 
+    /**
+     * @return Collection
+     */
     public function getCollection()
     {
         return $this->collection;
     }
 
+    /**
+     * @param Collection $collection
+     *
+     * @return Collection
+     */
     public function setCollection(Collection $collection)
     {
         $this->collection = $collection;
@@ -34,20 +42,28 @@ class Filter
         return $collection;
     }
 
+    /**
+     * @param string $input
+     */
     public function filterTitle($input)
     {
-        if (empty($input)) {
+        if (empty($input) || $this->collection->isEmpty()) {
             return null;
         }
 
-        $this->collection = $this->collection->filter(function (array $entry) use ($input) {
-            return mb_stripos($entry['title'], $input) !== false;
+        list($operand, $value) = array_values($this->getOperandAndValue($input));
+
+        $this->collection = $this->collection->filter(function (array $entry) use ($operand, $value) {
+            return $this->stringComparator($entry['title'], $value, $operand);
         });
     }
 
+    /**
+     * @param string $input
+     */
     public function filterWeight($input)
     {
-        if (empty($input)) {
+        if (empty($input) || $this->collection->isEmpty()) {
             return null;
         }
 
@@ -63,9 +79,12 @@ class Filter
         });
     }
 
+    /**
+     * @param string $input
+     */
     public function filterPrice($input)
     {
-        if (empty($input)) {
+        if (empty($input) || $this->collection->isEmpty()) {
             return null;
         }
 
@@ -79,30 +98,43 @@ class Filter
         });
     }
 
+    /**
+     * @param string $input
+     */
     public function filterCafe($input)
     {
-        if (empty($input)) {
+        if (empty($input) || $this->collection->isEmpty()) {
             return null;
         }
 
-        $this->collection = $this->collection->filter(function (array $entry) use ($input) {
-            return mb_stripos($entry['cafe'], $input) !== false;
+        list($operand, $value) = array_values($this->getOperandAndValue($input));
+
+        $this->collection = $this->collection->filter(function (array $entry) use ($operand, $value) {
+            return $this->stringComparator($entry['cafe'], $value, $operand);
         });
     }
 
+    /**
+     * @param string $input
+     */
     public function filterCategory($input)
     {
-        if (empty($input)) {
+        if (empty($input) || $this->collection->isEmpty()) {
             return null;
         }
 
-        dump($input);
+        list($operand, $value) = array_values($this->getOperandAndValue($input));
 
-        $this->collection = $this->collection->filter(function (array $entry) use ($input) {
-            return mb_stripos($entry['category'], $input) !== false;
+        $this->collection = $this->collection->filter(function (array $entry) use ($operand, $value) {
+            return $this->stringComparator($entry['category'], $value, $operand);
         });
     }
 
+    /**
+     * @param string $input
+     *
+     * @return array
+     */
     private function getOperandAndValue($input)
     {
         $input = array_filter(array_map('trim', explode(' ', $input)));
@@ -119,8 +151,13 @@ class Filter
                 $operand = '==';
                 break;
             case '==':
+            case 'c':
+            case 'contains':
             case '===':
             case 'eq':
+            case 'equals':
+            case 'sw':
+            case 'ew':
             case '>=':
             case '<=':
             case '>':
@@ -131,5 +168,42 @@ class Filter
         }
 
         return ['operand' => $operand, 'value' => $value];
+    }
+
+    /**
+     * @param string $haystack
+     * @param string $needle
+     * @param string $operand
+     *
+     * @return bool
+     */
+    private function stringComparator($haystack, $needle, $operand)
+    {
+        $haystack = mb_strtolower(trim($haystack));
+        $needle = mb_strtolower(trim($needle));
+        $result = false;
+
+        switch ($operand) {
+            case '==':
+            case 'c':
+            case 'contains':
+                $result = mb_strpos($haystack, $needle) !== false;
+                break;
+            case 'eq':
+            case 'equals':
+            case '===':
+                $result = strcmp($haystack, $needle) === 0;
+                break;
+            case 'sw':
+            case 'starts-with':
+                $result = mb_strpos($haystack, $needle) === 0;
+                break;
+            case 'ew':
+            case 'ends-with':
+                $result = ($needle === mb_substr($haystack, -mb_strlen($needle)));
+                break;
+        }
+
+        return $result;
     }
 }

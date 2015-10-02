@@ -2,7 +2,6 @@
 
 use Lamantin\Collections\Collection;
 use Symfony\Component\DomCrawler\Crawler;
-use GuzzleHttp\Client as Guzzle;
 
 class Client
 {
@@ -23,10 +22,15 @@ class Client
      */
     public function __construct()
     {
-        $this->request = new Request(new Guzzle());
+        $this->request = new Request();
         $this->parser = new Parser(new Crawler(), new Normalizer());
     }
 
+    /**
+     * Возвращает структурированный массив меню
+     *
+     * @return array
+     */
     public function getMenu()
     {
         $cafe_list = $this->parser->parseCafeList($this->request->request(self::BASE_LAMANTIN_URL)->getContent());
@@ -35,6 +39,11 @@ class Client
         return $menu_map;
     }
 
+    /**
+     * Возвращает одномерный массив меню
+     *
+     * @return array
+     */
     public function getFlattenMenu()
     {
         return $this->flattenMenu($this->getMenu());
@@ -65,7 +74,14 @@ class Client
         return $cafe_menu;
     }
 
-    private function flattenMenu($list)
+    /**
+     * Плющит меню в одномерный массив
+     *
+     * @param array $list
+     *
+     * @return array
+     */
+    private function flattenMenu(array $list)
     {
         $flat_menu = [];
 
@@ -76,7 +92,7 @@ class Client
         foreach ($list as $cafe => $menu) {
             foreach ((array) $menu as $category => $meal_list) {
                 foreach ((array) $meal_list as $meal) {
-                    $flat_menu[] = array_merge($meal, compact('cafe', 'category'));
+                    $flat_menu[] = array_merge($meal, compact('category', 'cafe'));
                 }
             }
         }

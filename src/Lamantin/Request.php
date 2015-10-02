@@ -1,40 +1,31 @@
 <?php namespace Lamantin;
 
-use GuzzleHttp\Client as Guzzle;
 use Psr\Http\Message\ResponseInterface;
 
 class Request
 {
     /**
-     * @var Guzzle
-     */
-    private $guzzle;
-
-    /**
-     * @var ResponseInterface
+     * @var string
      */
     private $response;
-
-    /**
-     * @param Guzzle $guzzle
-     */
-    public function __construct(Guzzle $guzzle)
-    {
-        $this->guzzle = $guzzle;
-    }
 
     /**
      * @param string $url
      */
     public function request($url)
     {
-        $this->response = $this->guzzle->request('GET', $url);
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+        $this->response = curl_exec($ch);
+        curl_close($ch);
 
         return $this;
     }
 
     /**
-     * @return ResponseInterface
+     * @return string
      */
     public function getResponse()
     {
@@ -42,10 +33,10 @@ class Request
     }
 
     /**
-     * @return \Psr\Http\Message\StreamInterface
+     * @return string
      */
     public function getContent()
     {
-        return $this->getResponse()->getBody();
+        return (string) $this->getResponse();
     }
 }
