@@ -81,10 +81,17 @@ class LamantinCommand extends Command
         /** @var Collection $menu */
         $menu = Collection::make(unserialize(file_get_contents(BASE_DIR . '/menu.file')));
 
-        $menu = $this->filterMenu($menu)
+        $menu = $menu
+            ->transform(function ($entry) {
+                $cafe = explode(' ', $entry['cafe']);
+                $entry['cafe'] = $cafe[count($cafe) - 1];
+
+                return $entry;
+            })
+        ;
+        $menu = $this->filterMenu($menu, $input->getOptions())
             ->transform(function (array $entry) {
                 $entry['weight'] = implode('/', $entry['weight']);
-                unset($entry['cafe']);
 
                 return $entry;
             })
@@ -94,11 +101,17 @@ class LamantinCommand extends Command
         $this->displayTable($menu, $output);
     }
 
-    private function filterMenu(Collection $menu)
+    /**
+     * @param Collection $menu
+     * @param array      $options
+     *
+     * @return Collection
+     */
+    private function filterMenu(Collection $menu, array $options)
     {
         $this->filter->setCollection($menu);
 
-        foreach ($input->getOptions() as $option => $value) {
+        foreach ($options as $option => $value) {
             $method = 'filter' . ucfirst($option);
             if (method_exists($this->filter, $method)) {
                 $this->filter->{$method}($value);
@@ -116,13 +129,13 @@ class LamantinCommand extends Command
     public function displayTable(array $menu, $output)
     {
         if (count($menu) !== 0) {
-            $output->writeln('<info></info>');
+            $output->writeln('<info>Найдено следующее:</info>');
 
             $table = $this->getHelper('table');
-            $table->setHeaders(['Название блюда', 'Вес', 'Цена', 'Категория'])->setRows($menu);
+            $table->setHeaders(['Название блюда', 'Вес', 'Цена', 'Категория', 'Кафе'])->setRows($menu);
             $table->render($output);
         } else {
-            $output->writeln('<info></info>');
+            $output->writeln('<danger>Ничего не найдено</danger>');
         }
     }
 }
