@@ -79,7 +79,7 @@ class LamantinCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         /** @var Collection $menu */
-        $menu = Collection::make(unserialize(file_get_contents(BASE_DIR . '/menu.file')));
+        $menu = Collection::make($this->client->getFlattenMenu());
 
         $menu = $menu
             ->transform(function ($entry) {
