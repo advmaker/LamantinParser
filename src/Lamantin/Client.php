@@ -32,12 +32,12 @@ class Client
         $cafe_list = $this->parser->parseCafeList($this->request->request(self::BASE_LAMANTIN_URL)->getContent());
         $menu_map = $this->parseAllCafeMenu($cafe_list);
 
-        return Collection::make($menu_map);
+        return $menu_map;
     }
 
     public function getFlattenMenu()
     {
-        return Collection::make($this->flattenMenu($this->getMenu()));
+        return $this->flattenMenu($this->getMenu());
     }
 
     /**
@@ -68,7 +68,6 @@ class Client
     private function flattenMenu($list)
     {
         $flat_menu = [];
-        $date = new \DateTime('today');
 
         if (count($list) === 0) {
             return $flat_menu;
@@ -77,7 +76,7 @@ class Client
         foreach ($list as $cafe => $menu) {
             foreach ((array) $menu as $category => $meal_list) {
                 foreach ((array) $meal_list as $meal) {
-                    $flat_menu[] = array_merge($meal, compact('cafe', 'category', 'date'));
+                    $flat_menu[] = array_merge($meal, compact('cafe', 'category'));
                 }
             }
         }

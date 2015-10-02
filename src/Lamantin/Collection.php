@@ -1,4 +1,4 @@
-<?php namespace Lamantin\Collections;
+<?php namespace Lamantin;
 
 use ArrayAccess;
 use ArrayIterator;
