@@ -8,11 +8,22 @@ class Storage
     private $path;
 
     /**
-     * @param string $path
+     * @var string
      */
-    public function __construct($path)
+    private $extension;
+
+    /**
+     * @param string $path
+     * @param string $extension
+     */
+    public function __construct($path, $extension = '.file')
     {
         $this->path = $path;
+        $this->extension = $extension;
+
+        if (!file_exists($this->path)) {
+            mkdir($this->path);
+        }
     }
 
     /**
@@ -21,7 +32,7 @@ class Storage
      */
     public function has($name)
     {
-        $file = $this->path . '/' . $name;
+        $file = $this->path . '/' . $name . $this->extension;
 
         return file_exists($file) && is_file($file);
     }
@@ -36,7 +47,7 @@ class Storage
             return null;
         }
 
-        return json_decode(file_get_contents($this->path . '/' . $name), true);
+        return json_decode(file_get_contents($this->path . '/' . $name . $this->extension), true);
     }
 
     /**
@@ -47,7 +58,7 @@ class Storage
      */
     public function put($name, $data)
     {
-        file_put_contents($this->path . '/' . $name, json_encode($data));
+        file_put_contents($this->path . '/' . $name . $this->extension, json_encode($data));
 
         return $this;
     }
