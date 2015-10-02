@@ -41,13 +41,13 @@ class LamantinCommand extends Command
             ->addOption(
                 'weight',
                 'w',
-                InputOption::VALUE_REQUIRED,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Вес блюда'
             )
             ->addOption(
                 'price',
                 'p',
-                InputOption::VALUE_REQUIRED,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Цена блюда'
             )
             ->addOption(
@@ -89,6 +89,7 @@ class LamantinCommand extends Command
                 return $entry;
             })
         ;
+
         $menu = $this->filterMenu($menu, $input->getOptions())
             ->transform(function (array $entry) {
                 $entry['weight'] = implode('/', $entry['weight']);
