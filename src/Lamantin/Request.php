@@ -1,7 +1,5 @@
 <?php namespace Lamantin;
 
-use Psr\Http\Message\ResponseInterface;
-
 class Request
 {
     /**
