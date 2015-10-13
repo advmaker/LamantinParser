@@ -1,11 +1,10 @@
 {
   "name": "LamantinParser",
   "type": "application",
-  "description": "",
+  "description": "Parse and search menu of Lamantin Kafe",
   "keywords": [
-    "lamatin kafe"
+    "lamatin kafe", "parser"
   ],
-  "homepage": "http://f0w.org",
   "license": "MIT",
   "authors": [
     {
